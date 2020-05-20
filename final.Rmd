@@ -1,0 +1,46 @@
+---
+title: "final"
+author: "Allison Dong"
+date: "5/19/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(httr)
+library(stringr)
+library(dplyr)
+
+# Get the data from the repository
+us_confirmed <-read.csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv")
+
+us_death <-read.csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_US.csv")
+
+ # Create a dataset with data for california
+us_confirmed_ca <- us_confirmed %>% filter(str_detect(us_confirmed$Province_State, 'California'))
+us_death_ca <- us_death %>% filter(str_detect(us_death$Province_State, 'California'))
+
+# Delete the other columns
+us_confirmed_ca_con <- select(us_confirmed_ca, -UID, -iso2, -iso3, -code3, -FIPS, -Admin2, -Country_Region, -Combined_Key, -Lat, -Long_)
+us_death_ca_con <- select(us_death_ca, -UID, -iso2, -iso3, -code3, -FIPS, -Admin2, -Country_Region, -Combined_Key, -Lat, -Long_)
+
+# Sum the number of confirmed and death for california
+us_confirmed_ca_grouped <- us_confirmed_ca_con %>%
+  group_by(Province_State) %>%
+  summarise_all(funs(sum))
+
+us_death_ca_grouped <- us_death_ca_con %>%
+  group_by(Province_State) %>%
+  summarise_all(funs(sum))
+
+# Join two data sets together
+
+
+```
+
+
+
+```{r setup, include=FALSE }
+
+
+```
