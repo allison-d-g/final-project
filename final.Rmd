@@ -33,14 +33,50 @@ us_death_ca_grouped <- us_death_ca_con %>%
   group_by(Province_State) %>%
   summarise_all(funs(sum))
 
-# Join two data sets together
+# Change the date format to normal date format
+us_confirmed_ca_grouped_rearrange <- 
+   gather(us_confirmed_ca_grouped, key = Date, value = Cases, -Province_State)
+us_confirmed_ca_grouped_rearrange <- data.frame(us_confirmed_ca_grouped_rearrange, stringsAsFactors = FALSE) %>%
+  mutate(Date=as.Date(Date,format = "X%m.%d.%y")) 
 
+us_death_ca_grouped_rearrange <- 
+   gather(us_death_ca_grouped, key = Date, value = Cases, -Province_State)
+us_death_ca_grouped_rearrange <- data.frame(us_death_ca_grouped_rearrange, stringsAsFactors = FALSE) %>%
+  mutate(Date=as.Date(Date,format = "X%m.%d.%y")) 
+
+# Plot 
+ggplot() +
+  geom_point(data = us_confirmed_ca_grouped_rearrange, aes(x = Date, y= Cases), color = "blue") +
+  geom_point(data = us_death_ca_grouped_rearrange, aes(x = Date, y= Cases), color = "red") +
+  scale_x_date(labels = date_format("%Y-%m-%d"), breaks = "month") +
+  geom_vline(xintercept = as.numeric(as.Date("2020-03-19")), color = "black") +
+  labs(
+    title ="California's Trajectory for COVID-19") 
+
+# Delete the other columns
+us_confirmed_city_con <- select(us_confirmed_ca, -UID, -iso2, -iso3, -code3, -FIPS, -Province_State, -Country_Region, -Combined_Key, -Lat, -Long_)
+
+# Rank the data by the city has highest cases 
+confirmed_cases_city <- arrange(us_confirmed_city_con, -us_confirmed_city_con$X5.19.20)
+
+# Get the top 3 cities
+top_3_confirmed <- filter(confirmed_cases_city[1:3, ])
+
+# Change the date format to normal date format
+confirmed_cases_city_rearrange <- 
+   gather(top_3_confirmed, key = Date, value = Cases, -Admin2)
+confirmed_cases_city_rearrange <- data.frame(confirmed_cases_city_rearrange, stringsAsFactors = FALSE) %>%
+  mutate(Date=as.Date(Date,format = "X%m.%d.%y")) 
+
+# Plot 
+ggplot(data = confirmed_cases_city_rearrange) +
+  geom_point(
+  mapping = aes(x = Date, y= Cases,color = Admin2)) +
+  scale_x_date(labels = date_format("%Y-%m-%d"), breaks = "month") +
+  geom_vline(xintercept = as.numeric(as.Date("2020-03-19")), color = "black") +
+  labs(
+    title ="California's top three city trajectories for confirmations",
+    color = "Admin2") 
 
 ```
 
-
-
-```{r setup, include=FALSE }
-
-
-```
