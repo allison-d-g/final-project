@@ -79,4 +79,42 @@ ggplot(data = confirmed_cases_city_rearrange) +
     color = "Admin2") 
 
 ```
+```{r DD}
 
+
+# Add the population column into the confirmed data set
+confirmed_population_data <- anti_join(us_death, us_confirmed)
+
+# Delete column
+confirmed_population <- select(confirmed_population_data, -UID, -iso2, -iso3, -code3, -FIPS, -Admin2, -Country_Region, -Combined_Key, -Lat, -Long_, -Province_State)
+
+death <- select(us_death, -UID, -iso2, -iso3, -code3, -FIPS, -Population, -Country_Region, -Combined_Key, -Lat, -Long_, -Province_State)
+
+# Change the date format to normal date format 
+#and change from wide to long
+confirmed_population_rearrange <- 
+   gather(confirmed_population, key = Date, value = Confirmed, -Population)
+confirmed_population_rearrange <- data.frame(confirmed_population_rearrange, stringsAsFactors = FALSE) %>%
+  mutate(Date=as.Date(Date,format = "X%m.%d.%y"))
+
+death_rearrange <- 
+   gather(death, key = Date, value = Death, -Admin2)
+death_rearrange <- data.frame(death_rearrange, stringsAsFactors = FALSE) %>%
+  mutate(Date=as.Date(Date,format = "X%m.%d.%y"))
+
+# Plot
+plot.population <- ggplot(data = confirmed_population_rearrange) +
+  geom_point(
+  mapping = aes(x = Population, y= Confirmed)) +
+  scale_size(name = 'Population', trans = 'log10') + 
+  scale_x_log10(labels=scales::comma) + scale_y_log10(labels=scales::comma)
+
+##
+plot.con_death <- ggplot(data = data.frame(x=confirmed_population_rearrange$Confirmed, y=death_rearrange$Death)) +
+  geom_point(
+  mapping = aes(x = x, y= y)) +
+  
+  scale_x_log10(labels=scales::comma) + scale_y_log10(labels=scales::comma)
+
+plot_grid(plot.population,plot.con_death)
+```
