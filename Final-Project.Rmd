@@ -1,0 +1,129 @@
+---
+title: "FInal Group Project"
+author: "A. Sardaryzadeh"
+date: "5/20/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+library(kableExtra)
+library(magrittr)
+library(readr)
+library(geosphere)
+library(dplyr)
+library(tidyr)
+library(tibble)
+library(tidyverse)
+library(stringr)
+library(leaflet)
+
+```
+
+## Global trajectory
+
+```{r gt}
+options(scipen=999)
+
+##create a key value to later join tables##
+Confirmedwithkey <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")%>%
+  unite("Key",Lat:Long,remove=FALSE)
+
+deathswithkey <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv")%>%
+  unite("Key",Lat:Long,remove=FALSE)
+
+recoveredwithkey <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv")%>%
+  unite("Key",Lat:Long,remove=FALSE)
+##----------------------------##
+
+##Add the status to each table##
+Confirmedwithkey$Status<-'Confirmed'
+deathswithkey$Status<-'Deaths'
+recoveredwithkey$Status<-'Recovered'
+##----------------------------##
+
+##Join tables##
+Combo1<-rbind(Confirmedwithkey,deathswithkey)
+BigATable<-rbind(Combo1,recoveredwithkey)
+##----------------------------##
+
+
+##Manipulate tables##
+BigATable2<-BigATable%>%
+  gather(key=date,
+         value=cases,
+         dplyr::ends_with('0'))%>%
+  group_by(Status)%>%
+mutate(Weekdate=as.Date(date, format="%m/%d/%y"))
+##----------------------------##
+
+##Group and Summarize Table##
+  BigATable3<-BigATable2%>%
+    group_by(Status,Weekdate)%>%
+  summarize(Totalcases = sum(cases))
+##----------------------------##
+
+
+##Create Graph##
+ggplot(data=BigATable3)+geom_point(mapping=aes(x=Weekdate,y=Totalcases, color=Status, shape=Status))
+##----------------------------##
+```
+## Global Map
+
+```{r gm}
+
+##Group and Summarize Table##
+  BigATableMap<-BigATable2%>%
+    group_by(Status,Lat,Long)%>%
+  summarize(Totalcases = sum(cases))
+##----------------------------##
+
+##Create 3 tables to filter on##
+BigATableMapDeaths<- BigATableMap%>% filter(Status=="Deaths")
+BigATableMapConfirmed<- BigATableMap%>% filter(Status=="Confirmed")
+BigATableMapRecovered<- BigATableMap%>% filter(Status=="Recovered")
+##----------------------------##
+
+
+##Create the interactive map##
+leaflet(data = BigATableMap) %>% 
+ addTiles() %>%
+  addCircleMarkers(data=BigATableMapDeaths, ~Long , ~Lat, radius=8 , color="red",
+                   fillColor="red", stroke = TRUE, fillOpacity = 0.8, group="Deaths") %>%
+  addCircleMarkers(data=BigATableMapConfirmed, ~Long , ~Lat, radius=8 , color="green",
+                   fillColor="green", stroke = TRUE, fillOpacity = 0.8, group="Recovered") %>%
+    addCircleMarkers(data=BigATableMapRecovered, ~Long , ~Lat, radius=8 , color="orange",fillColor="orange", stroke = TRUE, fillOpacity = 0.8, group="Confirmed") %>%
+  
+  addLayersControl(
+       overlayGroups = c("Recovered", "Deaths", "Confirmed"),
+    options = layersControlOptions(collapsed = FALSE)
+  )
+##----------------------------##
+```
+
+## Narrowing Down Hotspots
+```{r ndh}
+##Group and Summarize Table##
+  NiceTable<-BigATable2%>%
+    group_by(Status,`Country/Region`)%>%
+  summarize(Totalcases = sum(cases))
+##----------------------------##
+
+NiceTable%>%
+  kable()%>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"
+))%>%
+  kable_styling(fixed_thead = T)%>%
+pack_rows(index=table(NiceTable$Status))
+
+ #group_rows(index=NiceTable$Status)
+#collapse_rows(columns = 1, valign = "top")
+
+
+```
+
+```{bash}
+git log --pretty=format:"%nSubject: %s%nAuthor: %aN%nDate: %aD%nBody: %b"
+```
+
