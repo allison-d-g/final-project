@@ -73,8 +73,7 @@ mutate(Weekdate=as.Date(date, format="%m/%d/%y"))
 ##Create Graph##
 ggplot(data=BigATable3)+geom_point(mapping=aes(x=Weekdate,y=Totalcases, color=Status, shape=Status)) +
 labs(
-    title ="Global Trajectory of COVID-19",
-    color = "Global Data Set" ) 
+    title ="Global Trajectory of COVID-19" ) 
 ##----------------------------##
 ```
 ## Global Map
@@ -193,6 +192,7 @@ plot2 <- ggplot(data = confirmed_cases_city_rearrange) +
 
 plot_grid(plot1, plot2, ncol = 1, align = 'v')
 ```
+
 ## Digging Deeper
 ```{r DD}
 # Delete the other unnecessary columns
