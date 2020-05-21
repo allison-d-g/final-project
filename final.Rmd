@@ -1,6 +1,6 @@
 ---
-title: "final"
-author: "Allison Dong "
+title: "Final Project "
+author: "Allison Dong & Afshin Sardaryzadeh"
 date: "5/21/2020"
 output: html_document
 ---
@@ -71,7 +71,10 @@ mutate(Weekdate=as.Date(date, format="%m/%d/%y"))
   summarize(Totalcases = sum(cases))
 ##----------------------------##
 ##Create Graph##
-ggplot(data=BigATable3)+geom_point(mapping=aes(x=Weekdate,y=Totalcases, color=Status, shape=Status))
+ggplot(data=BigATable3)+geom_point(mapping=aes(x=Weekdate,y=Totalcases, color=Status, shape=Status)) +
+labs(
+    title ="Global Trajectory of COVID-19",
+    color = "Global Data Set" ) 
 ##----------------------------##
 ```
 ## Global Map
