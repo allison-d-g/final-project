@@ -101,21 +101,20 @@ death_rearrange <- data.frame(death_rearrange, stringsAsFactors = FALSE) %>%
 # Plot
 plot.population <- ggplot(data = data.frame(confirmed=confirmed_population_rearrange$Confirmed, Population=us_death$Population)) +
   geom_point(
-  mapping = aes(x = Population, y= confirmed))  +
-  scale_size(name = 'Population', trans = 'log10') + 
-  scale_x_log10(labels=scales::comma) +
-  scale_y_log10(labels=scales::comma) +
+  mapping = aes(x = Population, y= confirmed)) +
+  scale_x_continuous(labels=scales::comma, trans = log2_trans()) +
+  scale_y_continuous(labels=scales::comma, trans = log2_trans()) +
   labs(
-    title ="Confirmations Vs. Population") 
+    title ="Confirmations Vs. Population", y = "Confirmation Counts") 
 
 ##
 plot.con_death <- ggplot(data = data.frame(Confirmed=confirmed_population_rearrange$Confirmed, Death=death_rearrange$Death)) +
   geom_point(
   mapping = aes(x = Confirmed, y= Death)) +
-  scale_x_log10(labels=scales::comma) +   
-  scale_y_log10(labels=scales::comma) +
+  scale_x_continuous(labels=scales::comma, trans = log2_trans()) +   
+  scale_y_continuous(labels=scales::comma, trans = log2_trans()) +
   labs(
-    title ="Deaths VS. Confirmations") 
+    title ="Deaths VS. Confirmations", x= "Confirmed Counts", y="Deaths Counts") 
   
 plot_grid(plot.population, plot.con_death)
 ```
