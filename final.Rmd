@@ -1,20 +1,127 @@
 ---
 title: "final"
-author: "Allison Dong"
-date: "5/19/2020"
+author: "Allison Dong "
+date: "5/21/2020"
 output: html_document
 ---
-## Zooming Into Our State
-```{r  message=FALSE, echo=TRUE}
-library(httr)
-library(stringr)
+
+## Data
+For the final group project, we will use ALL of the data sets provided under this GitHub account (global confirmed, recovered, and deaths as well as US confirmed and deaths).
+
+Data for 2019 Novel Coronavirus is operated by the John Hopkins University Center for Systems Science and Engineering (JHU CSSE). Data includes daily time series CSV summary tables, including confirmations and deaths. Lat and Long refer to coordinates references for the user. Date fields are stored in MM/DD/YYYY format.
+
+## Background
+The Global Health Initiative has recently employed a new data science response team, CSIT-165, that uses data science to characterize pandemic diseases. CSIT-165 disseminates data driven analyses to global and local decision makers.
+CSIT-165 is a conglomerate comprised of two fabricated entities: World Health Organization (WHO) and U.S. Pandemic Response Team (USPRT). 
+
+## Link to GitHub repository
+https://github.com/allison-d-g/final-project
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+library(kableExtra)
+library(magrittr)
+library(readr)
+library(geosphere)
 library(dplyr)
-library(ggplot2)
 library(tidyr)
+library(tibble)
+library(tidyverse)
+library(stringr)
+library(leaflet)
+library(httr)
+library(ggplot2)
 library(scales)
 library(cowplot)
-library(tidyverse)
+```
 
+## Global trajectory
+
+```{r gt}
+options(scipen=999)
+##create a key value to later join tables##
+Confirmedwithkey <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")%>%
+  unite("Key",Lat:Long,remove=FALSE)
+deathswithkey <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv")%>%
+  unite("Key",Lat:Long,remove=FALSE)
+recoveredwithkey <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv")%>%
+  unite("Key",Lat:Long,remove=FALSE)
+##----------------------------##
+##Add the status to each table##
+Confirmedwithkey$Status<-'Confirmed'
+deathswithkey$Status<-'Deaths'
+recoveredwithkey$Status<-'Recovered'
+##----------------------------##
+##Join tables##
+Combo1<-rbind(Confirmedwithkey,deathswithkey)
+BigATable<-rbind(Combo1,recoveredwithkey)
+##----------------------------##
+##Manipulate tables##
+BigATable2<-BigATable%>%
+  gather(key=date,
+         value=cases,
+         dplyr::ends_with('0'))%>%
+  group_by(Status)%>%
+mutate(Weekdate=as.Date(date, format="%m/%d/%y"))
+##----------------------------##
+##Group and Summarize Table##
+  BigATable3<-BigATable2%>%
+    group_by(Status,Weekdate)%>%
+  summarize(Totalcases = sum(cases))
+##----------------------------##
+##Create Graph##
+ggplot(data=BigATable3)+geom_point(mapping=aes(x=Weekdate,y=Totalcases, color=Status, shape=Status))
+##----------------------------##
+```
+## Global Map
+
+```{r gm}
+##Group and Summarize Table##
+  BigATableMap<-BigATable2%>%
+    group_by(Status,Lat,Long)%>%
+  summarize(Totalcases = sum(cases))
+##----------------------------##
+##Create 3 tables to filter on##
+BigATableMapDeaths<- BigATableMap%>% filter(Status=="Deaths")
+BigATableMapConfirmed<- BigATableMap%>% filter(Status=="Confirmed")
+BigATableMapRecovered<- BigATableMap%>% filter(Status=="Recovered")
+##----------------------------##
+##Create the interactive map##
+leaflet(data = BigATableMap) %>% 
+ addTiles() %>%
+  addCircleMarkers(data=BigATableMapDeaths, ~Long , ~Lat, radius=8 , color="red",
+                   fillColor="red", stroke = TRUE, fillOpacity = 0.8, group="Deaths") %>%
+  addCircleMarkers(data=BigATableMapConfirmed, ~Long , ~Lat, radius=8 , color="green",
+                   fillColor="green", stroke = TRUE, fillOpacity = 0.8, group="Recovered") %>%
+    addCircleMarkers(data=BigATableMapRecovered, ~Long , ~Lat, radius=8 , color="orange",fillColor="orange", stroke = TRUE, fillOpacity = 0.8, group="Confirmed") %>%
+  
+  addLayersControl(
+       overlayGroups = c("Recovered", "Deaths", "Confirmed"),
+    options = layersControlOptions(collapsed = FALSE)
+  )
+##----------------------------##
+```
+
+## Narrowing Down Hotspots
+```{r ndh}
+##Group and Summarize Table##
+  NiceTable<-BigATable2%>%
+    group_by(Status,`Country/Region`)%>%
+  summarize(Totalcases = sum(cases))
+##----------------------------##
+NiceTable%>%
+  kable()%>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"
+))%>%
+  kable_styling(fixed_thead = T)%>%
+pack_rows(index=table(NiceTable$Status))
+ #group_rows(index=NiceTable$Status)
+#collapse_rows(columns = 1, valign = "top")
+```
+
+## Zooming Into Our State
+```{r zios}
 # Get the data from the repository
 us_confirmed <-read.csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv")
 
@@ -48,7 +155,7 @@ us_death_ca_grouped_rearrange <-
 us_death_ca_grouped_rearrange <- data.frame(us_death_ca_grouped_rearrange, stringsAsFactors = FALSE) %>%
   mutate(Date=as.Date(Date,format = "X%m.%d.%y")) 
 
-# Plot 
+# Plot the results for confirmed and deaths case in CA
 plot1 <- ggplot() +
   geom_point(data = us_confirmed_ca_grouped_rearrange, aes(x = Date, y= Cases, color ="blue")) +
   geom_point(data = us_death_ca_grouped_rearrange, aes(x = Date, y= Cases, color = "red"))+
@@ -72,7 +179,7 @@ confirmed_cases_city_rearrange <-
 confirmed_cases_city_rearrange <- data.frame(confirmed_cases_city_rearrange, stringsAsFactors = FALSE) %>%
   mutate(Date=as.Date(Date,format = "X%m.%d.%y")) 
 
-# Plot 
+# Plot the top 3 cities
 plot2 <- ggplot(data = confirmed_cases_city_rearrange) +
   geom_point(
   mapping = aes(x = Date, y= Cases,color = Admin2)) +
@@ -85,7 +192,7 @@ plot_grid(plot1, plot2, ncol = 1, align = 'v')
 ```
 ## Digging Deeper
 ```{r DD}
-# Delete column
+# Delete the other unnecessary columns
 confirmed_population <- select(us_confirmed, -UID, -iso2, -iso3, -code3, -FIPS, -Country_Region, -Combined_Key, -Lat, -Long_, -Province_State)
 
 death <- select(us_death, -UID, -iso2, -iso3, -code3, -FIPS, -Country_Region, -Combined_Key, -Lat, -Long_, -Province_State, -Admin2)
@@ -121,4 +228,8 @@ plot.con_death <- ggplot(data = data.frame(Confirmed=confirmed_population_rearra
     title ="Deaths VS. Confirmations", x= "Confirmed Counts", y="Deaths Counts") 
   
 plot_grid(plot.population, plot.con_death, align = 'v')
+```
+
+```{bash}
+git log --pretty=format:"%nSubject: %s%nAuthor: %aN%nDate: %aD%nBody: %b"
 ```
